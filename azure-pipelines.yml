@@ -1,0 +1,91 @@
+trigger:
+  branches:
+    include:
+      - main  
+
+variables:
+  PYTHON_VERSION: '3.9'
+  ARTIFACT_NAME: 'HaroldSneiderOrosteguiAlfonso-$(Build.BuildId).zip'
+
+stages:
+- stage: Build
+  displayName: "Stage 1 - Integración Continua"
+  jobs:
+    - job: BuildJob
+      displayName: "Compilar y Empaquetar"
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - script: |
+            echo "Usando Python versión: $(PYTHON_VERSION)"
+          displayName: "Mostrar variable de entorno"
+
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '$(PYTHON_VERSION)'
+        - script: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            python -m unittest discover
+          displayName: "Instalar dependencias y ejecutar pruebas"
+
+
+        - task: ArchiveFiles@2
+          inputs:
+            rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+            includeRootFolder: false
+            archiveType: 'zip'
+            archiveFile: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME)'
+            replaceExistingArchive: true
+        - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME)'
+            ArtifactName: 'drop'
+            publishLocation: 'Container'
+
+
+- stage: Deploy
+  displayName: "Stage 2 - Despliegue Continuo"
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+    - deployment: DeployJob
+      displayName: "Desplegar en AWS"
+      environment: "aws-deployment"
+      pool:
+        vmImage: 'ubuntu-latest'
+      variables:
+        - group: HaroldSneiderOrosteguiAlfonso-Library
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+              # 4. Subir artefacto a AWS S3
+              - task: AWSCLI@1
+                inputs:
+                  awsCredentials: 'AWS'   # Service Connection configurado
+                  regionName: 'us-east-1'
+                  command: 's3'
+                  arguments: 'cp $(Pipeline.Workspace)/drop/$(ARTIFACT_NAME) s3://pruebas-devops1/$(ARTIFACT_NAME)'
+
+              # 5. Despliegue en AWS Elastic Beanstalk
+              - task: AWSCLI@1
+                inputs:
+                  awsCredentials: 'AWS'
+                  regionName: 'us-east-1'
+                  command: 'elasticbeanstalk'
+                  arguments: >
+                    create-application-version
+                    --application-name Pruebas
+                    --version-label $(Build.BuildId)
+                    --source-bundle S3Bucket="pruebas-devops1",S3Key="$(ARTIFACT_NAME)"
+
+              - task: AWSCLI@1
+                inputs:
+                  awsCredentials: 'AWS'
+                  regionName: 'us-east-1'
+                  command: 'elasticbeanstalk'
+                  arguments: >
+                    update-environment
+                    --environment-name Pruebas-env-2
+                    --version-label $(Build.BuildId)
