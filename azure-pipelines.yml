@@ -5,7 +5,6 @@ trigger:
 
 variables:
   PYTHON_VERSION: '3.9'
-  # El nombre del archivo ya incluye .zip al final
   ARTIFACT_NAME: 'HaroldSneiderOrosteguiAlfonso-$(Build.BuildId).zip'
   AWS_REGION: 'us-east-1'
   SERVICE_CONNECTION: 'AWS'
@@ -29,7 +28,7 @@ stages:
             python -m unittest discover
           displayName: "Instalar dependencias y ejecutar pruebas"
 
-        # Empaquetamos el código fuente
+
         - task: ArchiveFiles@2
           displayName: "Crear paquete ZIP"
           inputs:
@@ -39,55 +38,52 @@ stages:
             archiveFile: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME)'
             replaceExistingArchive: true
 
-        # Publicamos el archivo ZIP como artefacto de la compilación
+
         - task: PublishBuildArtifacts@1
           inputs:
             PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME)'
             ArtifactName: 'drop'
             publishLocation: 'Container'
 
-- stage: Deploy
-  displayName: "Stage 2 - Despliegue Continuo"
-  dependsOn: Build
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
     - deployment: DeployJob
       displayName: "Desplegar en AWS"
       environment: "aws-deployment"
       pool:
         vmImage: 'ubuntu-latest'
       strategy:
-        runOnce:
+        runOnce: 
           deploy:
             steps:
-            - task: S3Upload@1
-              displayName: "Subir artefacto a S3"
-              inputs:
-                awsCredentials: '$(SERVICE_CONNECTION)'
-                regionName: '$(AWS_REGION)'
-                bucketName: 'pruebas-devops1'
-                sourceFolder: '$(Pipeline.Workspace)/drop'
-                globExpressions: '$(ARTIFACT_NAME)'
-                
+              - task: AWSCLI@1
+                displayName: 'Subir ZIP a S3'
+                inputs:
+                  awsCredentials: 'AWS'
+                  regionName: 'us-east-1'
+                  awsCommand: 's3'
+                  awsSubCommand: 'cp'
+                  awsArguments: >
+                    $(Pipeline.Workspace)/drop/$(ARTIFACT_NAME)
+                    s3://pruebas-devops1/$(ARTIFACT_NAME)
 
-            - task: BeanstalkCreateApplicationVersion@1
-              displayName: "Crear versión en Elastic Beanstalk"
-              inputs:
-                awsCredentials: '$(SERVICE_CONNECTION)'
-                regionName: '$(AWS_REGION)'
-                applicationName: 'Pruebas'
-                deploymentBundleType: 'S3Object'
-                deploymentBundleBucket: 'pruebas-devops1'
-                deploymentBundleKey: '$(ARTIFACT_NAME)' # No agregamos .zip porque ya lo tiene la variable
-                versionLabel: '$(Build.BuildId)'
+              - task: AWSCLI@1
+                displayName: 'Crear Application Version'
+                inputs:
+                  awsCredentials: 'AWS'
+                  regionName: 'us-east-1'
+                  awsCommand: 'elasticbeanstalk'
+                  awsSubCommand: 'create-application-version'
+                  awsArguments: >
+                    --application-name Pruebas
+                    --version-label build-$(Build.BuildId)
+                    --source-bundle S3Bucket=pruebas-devops1,S3Key=$(ARTIFACT_NAME)
 
-
-            - task: BeanstalkDeployApplication@1
-              displayName: "Desplegar en Elastic Beanstalk"
-              inputs:
-                awsCredentials: '$(SERVICE_CONNECTION)'
-                regionName: '$(AWS_REGION)'
-                applicationName: 'Pruebas'
-                environmentName: 'Pruebas-env-2'
-                deploymentBundleType: 'ExistingVersion'
-                versionLabel: '$(Build.BuildId)'
+              - task: AWSCLI@1
+                displayName: 'Actualizar Environment'
+                inputs:
+                  awsCredentials: 'AWS'
+                  regionName: 'us-east-1'
+                  awsCommand: 'elasticbeanstalk'
+                  awsSubCommand: 'update-environment'
+                  awsArguments: >
+                    --environment-name Pruebas-env-2
+                    --version-label build-$(Build.BuildId)
