@@ -28,7 +28,6 @@ stages:
             python -m unittest discover
           displayName: "Instalar dependencias y ejecutar pruebas"
 
-
         - task: ArchiveFiles@2
           displayName: "Crear paquete ZIP"
           inputs:
@@ -38,13 +37,17 @@ stages:
             archiveFile: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME)'
             replaceExistingArchive: true
 
-
         - task: PublishBuildArtifacts@1
+          displayName: "Publicar Artefacto"
           inputs:
             PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME)'
             ArtifactName: 'drop'
             publishLocation: 'Container'
 
+- stage: Deploy
+  displayName: "Stage 2 - Despliegue AWS"
+  dependsOn: Build
+  jobs:
     - deployment: DeployJob
       displayName: "Desplegar en AWS"
       environment: "aws-deployment"
@@ -57,19 +60,17 @@ stages:
               - task: AWSCLI@1
                 displayName: 'Subir ZIP a S3'
                 inputs:
-                  awsCredentials: 'AWS'
-                  regionName: 'us-east-1'
+                  awsCredentials: '$(SERVICE_CONNECTION)'
+                  regionName: '$(AWS_REGION)'
                   awsCommand: 's3'
                   awsSubCommand: 'cp'
-                  awsArguments: >
-                    $(Pipeline.Workspace)/drop/$(ARTIFACT_NAME)
-                    s3://pruebas-devops1/$(ARTIFACT_NAME)
+                  awsArguments: '$(Pipeline.Workspace)/drop/$(ARTIFACT_NAME) s3://pruebas-devops1/$(ARTIFACT_NAME)'
 
               - task: AWSCLI@1
                 displayName: 'Crear Application Version'
                 inputs:
-                  awsCredentials: 'AWS'
-                  regionName: 'us-east-1'
+                  awsCredentials: '$(SERVICE_CONNECTION)'
+                  regionName: '$(AWS_REGION)'
                   awsCommand: 'elasticbeanstalk'
                   awsSubCommand: 'create-application-version'
                   awsArguments: >
@@ -80,8 +81,8 @@ stages:
               - task: AWSCLI@1
                 displayName: 'Actualizar Environment'
                 inputs:
-                  awsCredentials: 'AWS'
-                  regionName: 'us-east-1'
+                  awsCredentials: '$(SERVICE_CONNECTION)'
+                  regionName: '$(AWS_REGION)'
                   awsCommand: 'elasticbeanstalk'
                   awsSubCommand: 'update-environment'
                   awsArguments: >
