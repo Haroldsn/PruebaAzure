@@ -5,7 +5,10 @@ trigger:
 
 variables:
   PYTHON_VERSION: '3.9'
+  # El nombre del archivo ya incluye .zip al final
   ARTIFACT_NAME: 'HaroldSneiderOrosteguiAlfonso-$(Build.BuildId).zip'
+  AWS_REGION: 'us-east-1'
+  SERVICE_CONNECTION: 'AWS'
 
 stages:
 - stage: Build
@@ -16,33 +19,32 @@ stages:
       pool:
         vmImage: 'ubuntu-latest'
       steps:
-        - script: |
-            echo "Usando Python versión: $(PYTHON_VERSION)"
-          displayName: "Mostrar variable de entorno"
-
         - task: UsePythonVersion@0
           inputs:
             versionSpec: '$(PYTHON_VERSION)'
+        
         - script: |
             python -m pip install --upgrade pip
             pip install -r requirements.txt
             python -m unittest discover
           displayName: "Instalar dependencias y ejecutar pruebas"
 
-
+        # Empaquetamos el código fuente
         - task: ArchiveFiles@2
+          displayName: "Crear paquete ZIP"
           inputs:
             rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
             includeRootFolder: false
             archiveType: 'zip'
             archiveFile: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME)'
             replaceExistingArchive: true
+
+        # Publicamos el archivo ZIP como artefacto de la compilación
         - task: PublishBuildArtifacts@1
           inputs:
             PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME)'
             ArtifactName: 'drop'
             publishLocation: 'Container'
-
 
 - stage: Deploy
   displayName: "Stage 2 - Despliegue Continuo"
@@ -54,9 +56,6 @@ stages:
       environment: "aws-deployment"
       pool:
         vmImage: 'ubuntu-latest'
-      variables:
-        awsRegion: 'us-east-1' 
-        serviceConnectionName: 'AWS' 
       strategy:
         runOnce:
           deploy:
@@ -64,29 +63,30 @@ stages:
             - task: S3Upload@1
               displayName: "Subir artefacto a S3"
               inputs:
-                awsCredentials: 'AWS'
-                regionName: '$(REGION)'
+                awsCredentials: '$(SERVICE_CONNECTION)'
+                regionName: '$(AWS_REGION)'
                 bucketName: 'pruebas-devops1'
                 sourceFolder: '$(Pipeline.Workspace)/drop'
                 globExpressions: '$(ARTIFACT_NAME)'
-                targetFolder: '' 
                 
+
             - task: BeanstalkCreateApplicationVersion@1
-              displayName: "Crear versión en EB"
+              displayName: "Crear versión en Elastic Beanstalk"
               inputs:
-                awsCredentials: 'AWS'
-                regionName: '$(REGION)'
+                awsCredentials: '$(SERVICE_CONNECTION)'
+                regionName: '$(AWS_REGION)'
                 applicationName: 'Pruebas'
                 deploymentBundleType: 'S3Object'
                 deploymentBundleBucket: 'pruebas-devops1'
-                deploymentBundleKey: '$(ARTIFACT_NAME).zip' # Apunta al archivo .zip
+                deploymentBundleKey: '$(ARTIFACT_NAME)' # No agregamos .zip porque ya lo tiene la variable
                 versionLabel: '$(Build.BuildId)'
 
+
             - task: BeanstalkDeployApplication@1
-              displayName: "Desplegar en EB"
+              displayName: "Desplegar en Elastic Beanstalk"
               inputs:
-                awsCredentials: 'AWS'
-                regionName: '$(REGION)'
+                awsCredentials: '$(SERVICE_CONNECTION)'
+                regionName: '$(AWS_REGION)'
                 applicationName: 'Pruebas'
                 environmentName: 'Pruebas-env-2'
                 deploymentBundleType: 'ExistingVersion'
