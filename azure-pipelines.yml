@@ -55,7 +55,8 @@ stages:
       pool:
         vmImage: 'ubuntu-latest'
       variables:
-        - group: HaroldSneiderOrosteguiAlfonso-Library
+        awsRegion: 'us-east-1' 
+        serviceConnectionName: 'AWS' 
       strategy:
         runOnce:
           deploy:
