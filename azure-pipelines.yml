@@ -72,18 +72,18 @@ stages:
                 targetFolder: '' 
                 
             - task: BeanstalkCreateApplicationVersion@1
-              displayName: "Crear versión en Elastic Beanstalk"
+              displayName: "Crear versión en EB"
               inputs:
                 awsCredentials: 'AWS'
                 regionName: '$(REGION)'
                 applicationName: 'Pruebas'
                 deploymentBundleType: 'S3Object'
                 deploymentBundleBucket: 'pruebas-devops1'
-                deploymentBundleKey: '$(ARTIFACT_NAME)'
+                deploymentBundleKey: '$(ARTIFACT_NAME).zip' # Apunta al archivo .zip
                 versionLabel: '$(Build.BuildId)'
 
             - task: BeanstalkDeployApplication@1
-              displayName: "Desplegar en Elastic Beanstalk"
+              displayName: "Desplegar en EB"
               inputs:
                 awsCredentials: 'AWS'
                 regionName: '$(REGION)'
