@@ -79,27 +79,33 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # 🔹 Instalar Kind versión estable
-      - name: Set up Kind cluster
-        uses: engineerd/setup-kind@v0.11.1
-        with:
-          version: v0.17.0
+      # Instalar Kind manualmente
+      - name: Install Kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.17.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
 
-      # 🔹 Configurar kubectl
+      - name: Verify Kind
+        run: kind version
+
+      # Crear cluster Kind
+      - name: Create Kind cluster
+        run: kind create cluster --name voting-cluster
+
+      # Configurar kubectl
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
 
-      # 🔹 Cargar imagen Docker en Kind
+      # Cargar imagen Docker en Kind
       - name: Load Docker image into Kind
-        run: |
-          kind load docker-image ${{ secrets.DOCKER_USER }}/voting-app:latest
+        run: kind load docker-image ${{ secrets.DOCKER_USER }}/voting-app:latest --name voting-cluster
 
-      # 🔹 Aplicar manifests Kubernetes
+      # Aplicar manifests
       - name: Apply Kubernetes manifests
-        run: |
-          kubectl apply -f environment/
+        run: kubectl apply -f environment/
 
-      # 🔹 Verificar deployment
+      # Verificar deployment
       - name: Verify deployment
         run: |
           kubectl get pods
