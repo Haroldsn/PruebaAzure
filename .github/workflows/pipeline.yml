@@ -79,7 +79,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Instalar Kind manualmente
       - name: Install Kind
         run: |
           curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.17.0/kind-linux-amd64
@@ -89,23 +88,28 @@ jobs:
       - name: Verify Kind
         run: kind version
 
-      # Crear cluster Kind
       - name: Create Kind cluster
         run: kind create cluster --name voting-cluster
 
-      # Configurar kubectl
+
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
+        
 
-      # Cargar imagen Docker en Kind
+      - name: Login DockerHub
+        run: echo "${{ secrets.DOCKER_PASS }}" | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+
+      - name: Pull Docker image
+        run: docker pull ${{ secrets.DOCKER_USER }}/voting-app:latest
+
       - name: Load Docker image into Kind
         run: kind load docker-image h2501/voting-app:latest --name voting-cluster
 
-      # Aplicar manifests
+
       - name: Apply Kubernetes manifests
         run: kubectl apply -f environment/
 
-      # Verificar deployment
+
       - name: Verify deployment
         run: |
           kubectl get pods
