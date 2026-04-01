@@ -1,0 +1,70 @@
+name: Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+
+  sonar:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Run SonarQube
+      run: |
+        echo "Simulando análisis SonarQube"
+
+  build:
+    runs-on: ubuntu-latest
+    needs: sonar
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build Docker image
+      run: docker build -t ${{ secrets.DOCKER_USER }}/voting-app:latest .
+
+    - name: Login DockerHub
+      run: echo "${{ secrets.DOCKER_PASS }}" | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+
+    - name: Push image
+      run: docker push ${{ secrets.DOCKER_USER }}/voting-app:latest
+
+  parallel-job:
+    runs-on: ubuntu-latest
+    strategy:
+      parallel: 10
+
+    steps:
+    - name: Hola Mundo x10
+      run: echo "Hola Mundo"
+
+  files:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Crear archivos
+      run: |
+        for i in {1..10}
+        do
+          date > archivo_$i.txt
+        done
+
+        cat archivo_*.txt
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f environment/
