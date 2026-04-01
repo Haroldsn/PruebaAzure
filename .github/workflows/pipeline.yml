@@ -77,26 +77,30 @@ jobs:
     needs: build
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    # Instalar kind y kubectl
-    - name: Set up Kind cluster
-      uses: engineerd/setup-kind@v0.6.0
-      with:
-        version: v0.17.0
+      # 🔹 Instalar Kind versión estable
+      - name: Set up Kind cluster
+        uses: engineerd/setup-kind@v0.11.1
+        with:
+          version: v0.17.0
 
-    - name: Set up kubectl
-      uses: azure/setup-kubectl@v3
+      # 🔹 Configurar kubectl
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
 
-    - name: Load Docker image into Kind
-      run: |
-        kind load docker-image h2501/voting-app:latest
+      # 🔹 Cargar imagen Docker en Kind
+      - name: Load Docker image into Kind
+        run: |
+          kind load docker-image ${{ secrets.DOCKER_USER }}/voting-app:latest
 
-    - name: Apply Kubernetes manifests
-      run: |
-        kubectl apply -f environment/
+      # 🔹 Aplicar manifests Kubernetes
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f environment/
 
-    - name: Verify deployment
-      run: |
-        kubectl get pods
-        kubectl get svc
+      # 🔹 Verificar deployment
+      - name: Verify deployment
+        run: |
+          kubectl get pods
+          kubectl get svc
