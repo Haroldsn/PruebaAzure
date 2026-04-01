@@ -37,7 +37,7 @@ jobs:
       run: echo "${{ secrets.DOCKER_PASS }}" | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
 
     - name: Push image
-      run: docker push ${{ secrets.DOCKER_USER }}/voting-app:latest
+      run: docker push h2501/voting-app:latest
 
   # -------------------------
   # 🔹 JOB PARALELO (CORREGIDO)
