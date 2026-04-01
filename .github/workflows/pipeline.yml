@@ -99,7 +99,7 @@ jobs:
 
       # Cargar imagen Docker en Kind
       - name: Load Docker image into Kind
-        run: kind load docker-image ${{ secrets.DOCKER_USER }}/voting-app:latest --name voting-cluster
+        run: kind load docker-image h2501/voting-app:latest --name voting-cluster
 
       # Aplicar manifests
       - name: Apply Kubernetes manifests
