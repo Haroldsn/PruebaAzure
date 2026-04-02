@@ -6,9 +6,9 @@ on:
 
 jobs:
 
-  # -------------------------
-  # 🔹 SONAR
-  # -------------------------
+
+  #  SONAR
+
   sonar:
     name: SonarQube Analysis
     runs-on: ubuntu-latest
@@ -20,9 +20,9 @@ jobs:
       run: |
         echo "Simulando análisis SonarQube"
 
-  # -------------------------
-  # 🔹 BUILD + PUSH
-  # -------------------------
+
+  #  BUILD + PUSH
+
   build:
     runs-on: ubuntu-latest
     needs: sonar
@@ -39,9 +39,9 @@ jobs:
     - name: Push image
       run: docker push h2501/voting-app:latest
 
-  # -------------------------
-  # 🔹 JOB PARALELO (CORREGIDO)
-  # -------------------------
+
+  #  JOB PARALELO (CORREGIDO)
+
   parallel-job:
     runs-on: ubuntu-latest
 
@@ -53,9 +53,9 @@ jobs:
     - name: Hola Mundo
       run: echo "Hola Mundo ${{ matrix.iteration }}"
 
-  # -------------------------
-  # 🔹 CREAR ARCHIVOS
-  # -------------------------
+
+  #  CREAR ARCHIVOS
+
   files:
     runs-on: ubuntu-latest
 
@@ -69,9 +69,9 @@ jobs:
 
         cat archivo_*.txt
 
-  # -------------------------
-  # 🔹 DEPLOY
-  # -------------------------
+
+  #  DEPLOY
+
   deploy:
     runs-on: ubuntu-latest
     needs: build
