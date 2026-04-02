@@ -40,7 +40,7 @@ jobs:
       run: docker push h2501/voting-app:latest
 
 
-  #  JOB PARALELO (CORREGIDO)
+  #  JOB PARALELO 
 
   parallel-job:
     runs-on: ubuntu-latest
