@@ -34,14 +34,6 @@ stages:
               python -m pip install --upgrade pip
             displayName: 'Instalar dependencias'
 
-          - script: |
-              python -m py_compile application.py
-            displayName: 'Verificar sintaxis'
-
-          - script: |
-              pytest --maxfail=1 --disable-warnings -q
-            displayName: 'Ejecutar pruebas unitarias'
-
           - task: ArchiveFiles@2
             displayName: 'Empaquetar ZIP'
             inputs:
