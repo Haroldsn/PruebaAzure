@@ -1,0 +1,92 @@
+trigger:
+  branches:
+    include:
+      - main
+      - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: AWS_REGION
+    value: 'us-east-1'
+  - name: S3_BUCKET
+    value: 'pruebas-devops1'
+  - name: EB_APPLICATION
+    value: 'Pruebas'
+  - name: EB_ENVIRONMENT
+    value: 'Harold_Orostegui-env'
+  - name: ARTIFACT_NAME
+    value: 'Harold_Orostegui-$(Build.BuildId)'
+
+stages:
+  - stage: Build
+    displayName: 'Build y Empaquetado'
+    jobs:
+      - job: BuildJob
+        steps:
+          - task: UsePythonVersion@0
+            displayName: 'Configurar Python 3.11'
+            inputs:
+              versionSpec: '3.11'
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+            displayName: 'Instalar dependencias'
+
+          - script: |
+              python -m py_compile application.py
+            displayName: 'Verificar sintaxis'
+
+          - script: |
+              pytest --maxfail=1 --disable-warnings -q
+            displayName: 'Ejecutar pruebas unitarias'
+
+          - task: ArchiveFiles@2
+            displayName: 'Empaquetar ZIP'
+            inputs:
+              rootFolderOrFile: '$(Build.SourcesDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/$(ARTIFACT_NAME).zip'
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publicar artifact'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifact: 'drop'
+
+  - stage: Deploy
+    displayName: 'Deploy a AWS'
+    dependsOn: Build
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/master')))
+    jobs:
+      - deployment: DeployAWS
+        displayName: 'Deploy a S3 y Beanstalk'
+        environment: 'Harold_Orostegui-env'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: S3Upload@1
+                  displayName: 'Subir ZIP a S3'
+                  inputs:
+                    awsCredentials: 'AWS'
+                    regionName: '$(AWS_REGION)'
+                    bucketName: '$(S3_BUCKET)'
+                    sourceFolder: '$(Pipeline.Workspace)/drop'
+                    globExpressions: '$(ARTIFACT_NAME).zip'
+
+                - task: BeanstalkDeployApplication@1
+                  displayName: 'Deploy a Elastic Beanstalk'
+                  inputs:
+                    awsCredentials: 'AWS'
+                    regionName: '$(AWS_REGION)'
+                    applicationName: '$(EB_APPLICATION)'
+                    environmentName: '$(EB_ENVIRONMENT)'
+                    applicationType: 's3'
+                    deploymentBundleBucket: '$(S3_BUCKET)'
+                    deploymentBundleKey: '$(ARTIFACT_NAME).zip'
+                    versionLabel: '$(ARTIFACT_NAME)'
+
