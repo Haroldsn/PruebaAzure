@@ -59,15 +59,13 @@ stages:
             deploy:
               steps:
                 - task: AWSCLI@1
-                  displayName: 'Validar/Crear entorno EB'
+                  displayName: 'Validar entorno EB'
                   inputs:
                     awsCredentials: 'AWS'
                     regionName: '$(AWS_REGION)'
-                    command: 'elasticbeanstalk'
-                    arguments: >
-                      describe-environments
-                      --application-name $(EB_APPLICATION)
-                      --environment-names $(EB_ENVIRONMENT)
+                    awsCommand: 'elasticbeanstalk'
+                    awsSubCommand: 'describe-environments'
+                    awsArguments: '--application-name $(EB_APPLICATION) --environment-names $(EB_ENVIRONMENT)'
 
                 - task: S3Upload@1
                   displayName: 'Subir ZIP'
