@@ -8,12 +8,14 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
+  - name: AWS_REGION
+    value: 'us-east-1'
   - name: S3_BUCKET
     value: 'pruebas-devops1'
   - name: EB_APPLICATION
     value: 'Pruebas'
   - name: EB_ENVIRONMENT
-    value: 'Harold_Orostegui'
+    value: 'Harold_Orostegui-env'
   - name: ARTIFACT_NAME
     value: 'Harold_Orostegui_Alfonso-$(Build.BuildId)'
 
@@ -30,6 +32,7 @@ stages:
 
           - script: |
               python -m pip install --upgrade pip
+              pip install -r requirements.txt
             displayName: 'Instalar dependencias'
 
           - task: ArchiveFiles@2
@@ -53,11 +56,22 @@ stages:
     jobs:
       - deployment: DeployAWS
         displayName: 'Deploy a S3 y Beanstalk'
-        environment: 'Harold_Orostegui'
+        environment: 'Harold_Orostegui-env'
         strategy:
           runOnce:
             deploy:
               steps:
+                - task: AWSCLI@1
+                  displayName: 'Validar entorno EB'
+                  inputs:
+                    awsCredentials: 'AWS'
+                    regionName: '$(AWS_REGION)'
+                    awsCommand: 'elasticbeanstalk'
+                    awsSubCommand: 'describe-environments'
+                    awsArguments: >
+                      --application-name $(EB_APPLICATION)
+                      --environment-names $(EB_ENVIRONMENT)
+
                 - task: AWSCLI@1
                   displayName: 'Crear entorno EB si no existe'
                   inputs:
@@ -68,8 +82,8 @@ stages:
                     awsArguments: >
                       --application-name $(EB_APPLICATION)
                       --environment-name $(EB_ENVIRONMENT)
-                      --solution-stack-name "64bit Amazon Linux 2023 v4.0.2 running Python 3.11"
-
+                      --solution-stack-name "64bit Amazon Linux 2 v3.5.6 running Python 3.11"
+ 
                 - task: S3Upload@1
                   displayName: 'Subir ZIP'
                   inputs:
