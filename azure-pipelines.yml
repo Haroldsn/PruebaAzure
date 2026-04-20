@@ -59,13 +59,16 @@ stages:
             deploy:
               steps:
                 - task: AWSCLI@1
-                  displayName: 'Validar entorno EB'
+                  displayName: 'Crear entorno EB si no existe'
                   inputs:
                     awsCredentials: 'AWS'
                     regionName: '$(AWS_REGION)'
                     awsCommand: 'elasticbeanstalk'
-                    awsSubCommand: 'describe-environments'
-                    awsArguments: '--application-name $(EB_APPLICATION) --environment-names $(EB_ENVIRONMENT)'
+                    awsSubCommand: 'create-environment'
+                    awsArguments: >
+                      --application-name $(EB_APPLICATION)
+                      --environment-name $(EB_ENVIRONMENT)
+                      --solution-stack-name "64bit Amazon Linux 2023 v4.0.2 running Python 3.11"
 
                 - task: S3Upload@1
                   displayName: 'Subir ZIP'
