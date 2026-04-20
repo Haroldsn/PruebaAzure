@@ -32,9 +32,7 @@ stages:
 
           - script: |
               python -m pip install --upgrade pip
-              # Si tienes requirements.txt, descomenta la siguiente línea:
-              # pip install -r requirements.txt
-            displayName: 'Instalar dependencias'
+              displayName: 'Instalar dependencias'
 
           - task: ArchiveFiles@2
             displayName: 'Empaquetar ZIP'
@@ -57,7 +55,7 @@ stages:
     jobs:
       - deployment: DeployAWS
         displayName: 'Deploy a S3 y Beanstalk'
-        environment: 'Harold_Orostegui-env'
+        environment: 'Harold_Orostegui'
         strategy:
           runOnce:
             deploy:
