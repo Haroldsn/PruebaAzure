@@ -59,7 +59,7 @@ stages:
             deploy:
               steps:
                 - task: S3Upload@1
-                  displayName: 'Subir ZIP a S3'
+                  displayName: 'Subir ZIP'
                   inputs:
                     awsCredentials: 'AWS'
                     regionName: '$(AWS_REGION)'
@@ -67,6 +67,12 @@ stages:
                     sourceFolder: '$(Pipeline.Workspace)/drop'
                     globExpressions: '$(ARTIFACT_NAME).zip'
 
+                - script: |
+                    aws elasticbeanstalk describe-environments \
+                      --application-name $(EB_APPLICATION) \
+                      --environment-names $(EB_ENVIRONMENT)
+                  displayName: 'Validar entorno EB'
+                  
                 - task: BeanstalkDeployApplication@1
                   displayName: 'Deploy a Elastic Beanstalk'
                   inputs:
