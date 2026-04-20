@@ -13,9 +13,9 @@ variables:
   - name: EB_APPLICATION
     value: 'Pruebas'
   - name: EB_ENVIRONMENT
-    value: 'Harold_Orostegui-env'
+    value: 'Harold_Orostegui'
   - name: ARTIFACT_NAME
-    value: 'Harold_Orostegui-$(Build.BuildId)'
+    value: 'Harold_Orostegui_Alfonso-$(Build.BuildId)'
 
 stages:
   - stage: Build
@@ -53,7 +53,7 @@ stages:
     jobs:
       - deployment: DeployAWS
         displayName: 'Deploy a S3 y Beanstalk'
-        environment: 'Harold_Orostegui-env'
+        environment: 'Harold_Orostegui'
         strategy:
           runOnce:
             deploy:
