@@ -13,7 +13,7 @@ variables:
   - name: EB_APPLICATION
     value: 'Pruebas'
   - name: EB_ENVIRONMENT
-    value: 'Harold_Orostegui-env'
+    value: 'Harold_Orostegui'
   - name: ARTIFACT_NAME
     value: 'Harold_Orostegui_Alfonso-$(Build.BuildId)'
 
