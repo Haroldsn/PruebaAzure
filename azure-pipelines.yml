@@ -55,7 +55,7 @@ stages:
     jobs:
       - deployment: DeployAWS
         displayName: 'Deploy a S3 y Beanstalk'
-        environment: 'Harold_Orostegui'
+        environment: 'Harold_Orostegui-env'
         strategy:
           runOnce:
             deploy:
