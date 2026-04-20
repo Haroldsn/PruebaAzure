@@ -15,7 +15,7 @@ variables:
   - name: EB_APPLICATION
     value: 'Pruebas'
   - name: EB_ENVIRONMENT
-    value: 'Harold_Orostegui'
+    value: 'Harold_Orostegui-env'
   - name: ARTIFACT_NAME
     value: 'Harold_Orostegui-$(Build.BuildId)'
 
@@ -32,7 +32,7 @@ stages:
 
           - script: |
               python -m pip install --upgrade pip
-              displayName: 'Instalar dependencias'
+            displayName: 'Instalar dependencias'
 
           - task: ArchiveFiles@2
             displayName: 'Empaquetar ZIP'
