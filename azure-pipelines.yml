@@ -13,7 +13,7 @@ variables:
   - name: EB_APPLICATION
     value: 'Pruebas'
   - name: EB_ENVIRONMENT
-    value: 'Harold_Orostegui'
+    value: 'Harold_Orostegui-env'
   - name: ARTIFACT_NAME
     value: 'Harold_Orostegui_Alfonso-$(Build.BuildId)'
 
@@ -68,11 +68,16 @@ stages:
                     globExpressions: '$(ARTIFACT_NAME).zip'
 
                 - script: |
+                    export AWS_ACCESS_KEY_ID=$(AWS_ACCESS_KEY_ID)
+                    export AWS_SECRET_ACCESS_KEY=$(AWS_SECRET_ACCESS_KEY)
+                    export AWS_DEFAULT_REGION=$(AWS_REGION)
+
+                    aws sts get-caller-identity
                     aws elasticbeanstalk describe-environments \
                       --application-name $(EB_APPLICATION) \
                       --environment-names $(EB_ENVIRONMENT)
                   displayName: 'Validar entorno EB'
-                  
+
                 - task: BeanstalkDeployApplication@1
                   displayName: 'Deploy a Elastic Beanstalk'
                   inputs:
