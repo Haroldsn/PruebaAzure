@@ -62,12 +62,15 @@ stages:
             deploy:
               steps:
                 - task: AWSCLI@1
-                  displayName: 'Listar solution stacks disponibles'
+                  displayName: 'Validar entorno EB'
                   inputs:
                     awsCredentials: 'AWS'
                     regionName: '$(AWS_REGION)'
                     awsCommand: 'elasticbeanstalk'
-                    awsSubCommand: 'list-available-solution-stacks'
+                    awsSubCommand: 'describe-environments'
+                    awsArguments: >
+                      --application-name $(EB_APPLICATION)
+                      --environment-names $(EB_ENVIRONMENT)
 
                 - task: AWSCLI@1
                   displayName: 'Crear entorno EB si no existe'
