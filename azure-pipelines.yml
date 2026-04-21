@@ -32,7 +32,7 @@ stages:
 
           - script: |
               python -m pip install --upgrade pip
-              pip install -r requirements.txt
+              # pip install -r requirements.txt   # Descomenta si tienes este archivo
             displayName: 'Instalar dependencias'
 
           - task: ArchiveFiles@2
@@ -62,15 +62,12 @@ stages:
             deploy:
               steps:
                 - task: AWSCLI@1
-                  displayName: 'Validar entorno EB'
+                  displayName: 'Listar solution stacks disponibles'
                   inputs:
                     awsCredentials: 'AWS'
                     regionName: '$(AWS_REGION)'
                     awsCommand: 'elasticbeanstalk'
-                    awsSubCommand: 'describe-environments'
-                    awsArguments: >
-                      --application-name $(EB_APPLICATION)
-                      --environment-names $(EB_ENVIRONMENT)
+                    awsSubCommand: 'list-available-solution-stacks'
 
                 - task: AWSCLI@1
                   displayName: 'Crear entorno EB si no existe'
@@ -82,7 +79,7 @@ stages:
                     awsArguments: >
                       --application-name $(EB_APPLICATION)
                       --environment-name $(EB_ENVIRONMENT)
-                      --solution-stack-name "64bit Amazon Linux 2 v3.5.6 running Python 3.11"
+                      --solution-stack-name "64bit Amazon Linux 2 v3.5.9 running Python 3.11"
 
                 - task: S3Upload@1
                   displayName: 'Subir ZIP'
@@ -104,4 +101,3 @@ stages:
                     deploymentBundleBucket: '$(S3_BUCKET)'
                     deploymentBundleKey: '$(ARTIFACT_NAME).zip'
                     versionLabel: '$(ARTIFACT_NAME)'
-
