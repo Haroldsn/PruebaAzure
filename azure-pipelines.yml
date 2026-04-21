@@ -82,7 +82,8 @@ stages:
                     awsArguments: >
                       --application-name $(EB_APPLICATION)
                       --environment-name $(EB_ENVIRONMENT)
-                      --platform-arn arn:aws:elasticbeanstalk:us-east-1::platform/Python 3.11 running on 64bit Amazon Linux 2023/4.0.2
+                      --platform-arn "arn:aws:elasticbeanstalk:us-east-1::platform/Python 3.11 running on 64bit Amazon Linux 2023/4.0.2"
+
 
                 - task: S3Upload@1
                   displayName: 'Subir ZIP'
